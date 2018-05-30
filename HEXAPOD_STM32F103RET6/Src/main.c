@@ -52,6 +52,8 @@
 #include "cmsis_os.h"
 
 /* USER CODE BEGIN Includes */
+#define SERVO_MAX 2120.0
+#define SERVO_MIN 470.0
 #define constrain(amt,low,high) ((amt)<(low)?(low):((amt)>(high)?(high):(amt)))
 /* USER CODE END Includes */
 
@@ -111,12 +113,12 @@ float map(float x, float in_min, float in_max, float out_min, float out_max)
 }
 
 float servoWrite(float value){
-	return map(constrain(value,0.0,180.0), 0.0,180.0,470.0,2120.0);
+	return map(constrain(value,0.0,180.0), 0.0,180.0,SERVO_MIN,SERVO_MAX);
 }
 
 void setServoVal(uint8_t leg,uint8_t num, float val){
 	if(val <= 180.0){
-		val = servoWrite(constrain(val, 500.0,2000.0));
+		val = servoWrite(val);
 	}
 	switch(leg)
 	{
@@ -708,7 +710,7 @@ static void MX_UART4_Init(void)
 {
 
   huart4.Instance = UART4;
-  huart4.Init.BaudRate = 115200;
+  huart4.Init.BaudRate = 9600;
   huart4.Init.WordLength = UART_WORDLENGTH_8B;
   huart4.Init.StopBits = UART_STOPBITS_1;
   huart4.Init.Parity = UART_PARITY_NONE;
@@ -789,6 +791,7 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+int8_t rx_uart_buf[4];
 uint8_t setup[] = {0x6B,0};
 uint8_t values[14];
 int data[7];
@@ -820,8 +823,17 @@ void StartDefaultTask(void const * argument)
 	data[6] = values[12] | values[13] << 8;
 
     //osDelay(100);
-     */
-    osDelay(1);
+*/
+	  if(hdma_uart4_rx.State == HAL_DMA_STATE_READY){
+		  HAL_UART_Receive_DMA(&huart4, rx_uart_buf,4);
+		  setServoVal(3,1, map(rx_uart_buf[2],-90,90,SERVO_MIN,SERVO_MAX));
+		  setServoVal(3,2, map(rx_uart_buf[3],-90,90,SERVO_MIN,SERVO_MAX));
+		  //TIM4->CCR3=map(rx_uart_buf[2],-90,90,470.0,2120.0);
+		  //TIM4->CCR2=map(rx_uart_buf[3],-90,90,470.0,2120.0);
+		  HAL_UART_Transmit_DMA(&huart4, rx_uart_buf,4);
+		  hdma_uart4_rx.State = HAL_DMA_STATE_BUSY;
+	  }
+	  osDelay(1);
   }
   /* USER CODE END 5 */ 
 }
@@ -833,6 +845,7 @@ void StartTask02(void const * argument)
   /* Infinite loop */
   for(;;)
   {
+
 	  for(float j = 900.0; j< 1700.0; j+=0.01)
 	  {
 		  for(uint8_t i = 0; i<6;i++){
@@ -846,6 +859,7 @@ void StartTask02(void const * argument)
 			  }
 		  }
 	  }
+	  osDelay(1000);
 	  for(float j = 1700.0; j> 900.0; j-=0.01)
 	  {
 		  for(uint8_t i = 0; i<6;i++){
@@ -897,14 +911,8 @@ void StartTask03(void const * argument)
   /* Infinite loop */
   for(;;)
   {
-	  /*
-	  if(hdma_uart4_rx.State == HAL_DMA_STATE_READY){
 
-		  HAL_UART_Transmit_DMA(&huart4, rx_uart_buf,3);
-		  hdma_uart4_rx.State = HAL_DMA_STATE_BUSY;
-	  }
-	  */
-    osDelay(1);
+	  osDelay(1);
   }
   /* USER CODE END StartTask03 */
 }
