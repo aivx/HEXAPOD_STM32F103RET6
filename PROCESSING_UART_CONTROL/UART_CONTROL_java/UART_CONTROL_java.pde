@@ -15,12 +15,12 @@ public float min_angle = 0;
 public float step = 5;
 public boolean pause = false;
 public boolean back = false;
-public boolean inverce_servo = false;
+public boolean inverce_servo = true;
 
 Boolean[] toggle = {false, false, false};
 byte inverse_count = 3;
 
-@ControlElement (x=1200, y=100, label="speed", properties = {"type=numberbox","value=50","min=0", "max=200","height=220", "width=25"})
+@ControlElement (x=1200, y=100, label="speed", properties = {"type=numberbox","value=100","min=0", "max=200","height=220", "width=25"})
 public void speed(float val){
   this.step = val/10;
 }
@@ -97,7 +97,7 @@ class Leg{
      ex = cos(E) * a + sx;
      ey = sin(E) * a + sy;
      int y = (int)degrees(E);
-     this.y = (int)constrain(map(y == y ? y:90, 200, 470,0,180),0,180);
+     this.y = (int)constrain(map(y == y ? y:90, 210, 470,0,180),0,180);
      //val2 = (int)constrain(map(degrees(E),354,396,0,180),0,180);
      //val2 = (int)degrees(E);
     // print("\tUpperArm Angle=\t"+y);
@@ -157,7 +157,7 @@ class Leg{
 
 Leg[] leg = new Leg[6];
 
-int[] values = {0,90,100,135};
+int[] values = {255, 0, 90, 100, 135};
 Boolean[] state = {false, false, false, false, false};
 
 void state_toggle(int j){
@@ -186,28 +186,29 @@ int[] convert(byte[] arr){
 
 void serialEvent(Serial p) { 
   for(byte i = 0; i<6; i++){
-    values[0] = i;
+    values[1] = i;
     int x, y, z;
     if(inverce_servo){
       x = leg[i].x;
       y = leg[i].y;
       z = leg[i].z;
     }else{
-      x = leg[i].z;
-      y = leg[i].x;
-      z = leg[i].y;
+      x = 90;
+      y = leg[i].x+20;
+      z = leg[i].y+45;
     }
+    
+    values[2] = x;
+    
     if(i<inverse_count){
-      values[1] = x;
-      values[2] = y;
+      values[3] = y;
     }else{
-      values[1] = 180 - x;
-      values[2] = 180 - y;
+      values[3] = 180 - y;
     } 
     if(i<3){
-      values[3] = z;
+      values[4] = z;
     }else{
-      values[3] = 180 - z;
+      values[4] = 180 - z;
     } 
     p.write(convert(values));
   }
@@ -216,7 +217,7 @@ void serialEvent(Serial p) {
   //p.write(convert(values));
    //printArray(vals);
    //printArray(m);
-   //printArray(p.readBytes(4));
+   printArray(p.readBytes(4));
     
 }
 
@@ -224,11 +225,9 @@ void serialEvent(Serial p) {
 void setup(){
  size(1300,700);
  printArray(Serial.list());
- try{
-   serial = new Serial(this, Serial.list()[1], 38400);
- }catch(Exception EX){
-   serial = new Serial(this, Serial.list()[0], 38400);
- }
+
+ serial = new Serial(this, Serial.list()[1], 9600);
+
  serial.bufferUntil(127);
  
  cp5 = new ControlP5(this);
@@ -279,7 +278,6 @@ void setup(){
   started();
   
  serialEvent(serial);
-
 }
 
 void resetall(){
