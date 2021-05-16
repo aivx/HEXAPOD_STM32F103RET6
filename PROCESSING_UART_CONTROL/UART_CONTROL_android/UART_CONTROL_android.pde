@@ -205,8 +205,8 @@ void onBluetoothDataEvent(String who, byte[] data) {
       z = leg[i].z;
     }else{
       x = 90;
-      y = leg[i].x+20;
-      z = leg[i].y+45;
+      y = leg[i].x;//+20;
+      z = leg[i].y;//+45;
     }
     
     values[2] = x;

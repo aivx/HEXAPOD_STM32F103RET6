@@ -1,12 +1,12 @@
+import processing.net.*; 
 import controlP5.*;
-import processing.serial.*;
 
 Toggle t;
 Slider s;
 Slider2D s2D;
 CheckBox checkbox;
-Serial serial;
 ControlP5 cp5;
+Client myClient;
 
 public float RAD = 40;
 public int a = 140, b = 160;
@@ -184,7 +184,7 @@ int[] convert(byte[] arr){
   return out;
 }
 
-void serialEvent(Serial p) { 
+void clientEvent(Client someClient) {
   for(byte i = 0; i<6; i++){
     values[1] = i;
     int x, y, z;
@@ -194,8 +194,8 @@ void serialEvent(Serial p) {
       z = leg[i].z;
     }else{
       x = 90;
-      y = leg[i].x;
-      z = leg[i].y;
+      y = leg[i].x+20;
+      z = leg[i].y+45;
     }
     
     values[2] = x;
@@ -210,25 +210,22 @@ void serialEvent(Serial p) {
     }else{
       values[4] = 180 - z;
     } 
-    p.write(convert(values));
+   // myClient.write(convert(values));
   }
   
-  
+  myClient.write(convert(values));
   //p.write(convert(values));
    //printArray(vals);
    //printArray(m);
-   printArray(p.readBytes(4));
+   //printArray(myClient.readBytes(4));
     
 }
 
 
 void setup(){
  size(1300,700);
- printArray(Serial.list());
-
- serial = new Serial(this, Serial.list()[2], 9600);
-
- serial.bufferUntil(127);
+ myClient = new Client(this, "192.168.1.182", 80);
+ //myClient.write("connect");
  
  cp5 = new ControlP5(this);
  cp5.addControllersFor(this);
@@ -277,7 +274,6 @@ void setup(){
  leg[2] = new Leg("6",checkbox,t,s,s2D,700,400);
   started();
   
- serialEvent(serial);
 }
 
 void resetall(){
